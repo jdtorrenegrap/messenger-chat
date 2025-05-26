@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>CHAT-CUL</title>
+</head>
+<body>
+    <h1>CHAT-CUL</h1>
+
+    <!-- Sección de búsqueda de usuarios -->
+    <section id="searchSection">
+        <h2>Buscar Usuarios</h2>
+        <input id="searchQuery" type="text" placeholder="Buscar usuario..." />
+        <button id="searchButton">Buscar</button>
+        <ul id="searchResults"></ul>
+    </section>
+
+    <!-- Sección de chat (inicialmente oculta) -->
+    <section id="chatSection" style="display:none;">
+        <h2>Conversación</h2>
+        <!-- Aquí se mostrará el nombre del usuario o información de la conversación -->
+        <div id="conversationInfo" data-conversation-id=""></div>
+        <!-- Lista de mensajes -->
+        <ul id="messages"></ul>
+        <!-- Formulario para enviar nuevos mensajes -->
+        <form id="form">
+            <input id="input" autocomplete="off" placeholder="Escribe un mensaje..." />
+            <button type="submit">Enviar</button>
+        </form>
+    </section>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        // Token predefinido, ya no se ingresa manualmente
+        const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0IiwibmFtZSI6Ikp1YW4iLCJlbWFpbCI6Imp1YW45MEBnbWFpbC5jb20iLCJpYXQiOjE3NDgyNzc5MjIsImV4cCI6MTc0ODI4NTEyMn0.kfh8GjVSHmZdRFMfJ_8vXhYjunZEQWUM4P_m--GC_7Y';
+
+        // Conectar al servidor con el token y serverOffset para recuperar mensajes offline
+        const socket = io('http://localhost:8000', {
+            auth: { token, serverOffset: 0 }
+        });
+
+        socket.on('connect', () => {
+            console.log('Conectado al servidor con token predefinido.');
+        });
+
+        socket.on('connect_error', (err) => {
+            console.error('Error de conexión:', err.message);
+            alert('Error de conexión: ' + err.message);
+        });
+
+        // Elementos del DOM
+        const searchQuery   = document.getElementById('searchQuery');
+        const searchButton  = document.getElementById('searchButton');
+        const searchResults = document.getElementById('searchResults');
+        const chatSection   = document.getElementById('chatSection');
+        const conversationInfo = document.getElementById('conversationInfo');
+        const messages      = document.getElementById('messages');
+        const form          = document.getElementById('form');
+        const input         = document.getElementById('input');
+
+        // Recibir mensajes (incluyendo los offline si aplica)
+        socket.on('chat message', (msg) => {
+            const item = document.createElement('li');
+            item.textContent = `${msg.sender}: ${msg.content}`;
+            messages.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        // Buscar usuarios usando la ruta REST
+        searchButton.addEventListener('click', async () => {
+            const query = searchQuery.value.trim();
+            if (!query) {
+                alert('Ingresa un criterio de búsqueda.');
+                return;
+            }
+            try {
+                const res = await fetch(`http://localhost:8000/chatcul/search?query=${encodeURIComponent(query)}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const users = await res.json();
+                // Limpiar resultados previos
+                searchResults.innerHTML = '';
+                if (users.length === 0) {
+                    searchResults.innerHTML = '<li>No se encontraron usuarios</li>';
+                    return;
+                }
+                // Listar usuarios encontrados
+                users.forEach(user => {
+                    const li = document.createElement('li');
+                    li.textContent = `${user.name} (${user.email})`;
+                    li.style.cursor = 'pointer';
+                    li.addEventListener('click', async () => {
+                        try {
+                            // Llamada a la ruta para crear/recuperar una conversación
+                            const resp = await fetch('http://localhost:8000/chatcul/conversation', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer ' + token
+                                },
+                                body: JSON.stringify({ targetUserId: user.id })
+                            });
+                            const data = await resp.json();
+                            const conversation = data.conversation;
+                            
+                            // Actualizar la interfaz: mostrar la sección de chat y ocultar la búsqueda
+                            conversationInfo.textContent = 'Conversación con: ' + user.name;
+                            conversationInfo.dataset.conversationId = conversation.id;
+                            chatSection.style.display = 'block';
+                            document.getElementById('searchSection').style.display = 'none';
+                            
+                            // Unirse a la sala correspondiente a la conversación
+                            socket.emit('join conversation', conversation.id);
+                            console.log(`Unido a la conversación ${conversation.id}`);
+                        } catch (err) {
+                            console.error('Error al crear o unirse a la conversación:', err);
+                            alert('Error al crear o unirse a la conversación');
+                        }
+                    });
+                    searchResults.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Error buscando usuarios:', error);
+                alert('Error buscando usuarios');
+            }
+        });
+
+        // Enviar mensajes a la conversación activa
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const messageContent = input.value.trim();
+            if (!messageContent) return;
+            const conversationId = conversationInfo.dataset.conversationId;
+            if (!conversationId) {
+                alert('No se encontró una conversación activa.');
+                return;
+            }
+            socket.emit('chat message', {
+                conversationId,
+                content: messageContent
+            });
+            input.value = '';
+        });
+    </script>
+</body>
+</html>
