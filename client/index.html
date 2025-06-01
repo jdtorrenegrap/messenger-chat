@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>CulChat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>CulChat</h1>
+    <div class="main-container">
+        <!-- Panel izquierdo - Búsqueda de contactos -->
+        <div class="left-panel">
+            <div class="search-section">
+                <h2>Buscar Contactos</h2>
+                <div class="search-container">
+                    <input id="searchQuery" type="text" placeholder="Buscar usuario..." />
+                    <button id="searchButton">Buscar</button>
+                </div>
+            </div>
+            <div class="contacts-list">
+                <ul id="searchResults"></ul>
+            </div>
+        </div>
+        <!-- Panel derecho - Chat -->
+        <div class="right-panel">
+            <div id="chatHeader" class="chat-header hidden">
+                <h2 id="conversationInfo" data-conversation-id=""></h2>
+            </div>
+            <div id="noChatSelected" class="no-chat-selected">
+                <div>
+                    <p>Busca un contacto para comenzar a chatear</p>
+                </div>
+            </div>
+            <div id="chatMessages" class="chat-messages hidden">
+                <ul id="messages"></ul>
+            </div>
+            <div id="chatInputContainer" class="chat-input-container hidden">
+                <form id="form">
+                    <input id="input" autocomplete="off" placeholder="Escribe un mensaje..." />
+                    <button type="submit">Enviar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

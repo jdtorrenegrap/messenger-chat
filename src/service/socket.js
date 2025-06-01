@@ -14,7 +14,7 @@ export function setupSocket(io) {
             if (err) {
                 return next(new Error('Token inválido'));
             }
-            socket.user = decoded; // Asociar el usuario autenticado al socket
+            socket.user = decoded;
             next();
         });
     });
@@ -29,12 +29,12 @@ export function setupSocket(io) {
 
             // Recuperar el historial de mensajes de la conversación
             try {
-                // Si serverOffset es 0, recuperamos todos los mensajes (o los primeros 50)
+                // Si serverOffset es 0, recuperamos todos los mensajes
                 const historyMessages = await getMessages(conversationId, socket.handshake.auth.serverOffset || 0);
                 historyMessages.forEach(message => {
                     socket.emit('chat message', {
                         id: message.id,
-                        sender: message.sender_name, // nombre del usuario que envió el mensaje
+                        sender: message.sender_name, 
                         content: message.content,
                         created_at: message.created_at
                     });

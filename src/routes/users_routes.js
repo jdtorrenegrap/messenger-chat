@@ -1,5 +1,5 @@
 import express from 'express';
-import { UsersService } from '../service/users_service.js'; // Agrega la extensión .js
+import { UsersService } from '../service/users_service.js';
 import { authenticateToken } from '../middleware/auth_whit_jwt.js';
 
 
@@ -33,7 +33,6 @@ router.get('/search', authenticateToken, async (req, res) => {
     const { query } = req.query;
 
     try {
-        // Corregir "shearchUsers" a "searchUsers"
         const result = await UsersService.searchUsers(query, req.user.sub);
         res.status(200).json(result);
     } catch (error) {

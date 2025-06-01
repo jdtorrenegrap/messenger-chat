@@ -4,17 +4,15 @@ import { createAccessToken } from '../middleware/acces_token.js';
 
 export class UsersService {
 
-    static async registerUser(name, email, password) {
-        // Hashear la contraseña
+    // Método para registrar un nuevo usuario
+    static async registerUser(name, email, password) { 
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Insertar el nuevo usuario con la contraseña hasheada
         return await createUser(name, email, hashedPassword);
     }
 
+    // Método para iniciar sesión
     static async authenticateUser(email, password) {
         const userResult = await loginUser(email);
-        // Si loginUser retorna un arreglo, tomamos el primer elemento
         const user = Array.isArray(userResult) ? userResult[0] : userResult;
         if (!user) {
             throw new Error('Usuario no encontrado');
@@ -26,19 +24,16 @@ export class UsersService {
             throw new Error('Contraseña incorrecta');
         }
 
-        // Crear y retornar el token de acceso
         const accessToken = createAccessToken(user.id, user.name, user.email);
         return { message: 'Inicio de sesión exitoso', accessToken };
     }
 
+    // Método para buscar usuarios
     static async searchUsers(query, currentUserId) {
-    // Validación del término de búsqueda
     if (!query || typeof query !== 'string' || query.trim() === '') {
         throw new Error('El término de búsqueda no puede estar vacío');
     }
 
-    // Ejecutar la consulta
     return await searchUsers(query.trim(), currentUserId);
 }
-
 }

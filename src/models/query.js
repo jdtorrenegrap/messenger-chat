@@ -26,7 +26,6 @@ export async function whereUserExists(email) {
     return user.length > 0;
 }
 
-// Buscar usuarios para iniciar chat (excluye al usuario actual)
 export async function searchUsers(query, currentUserId) {
     const results = await sql`
         SELECT id, name, email FROM users
@@ -37,7 +36,6 @@ export async function searchUsers(query, currentUserId) {
 }
 
 
-// Recuperar o crear conversación entre dos usuarios
 export async function getOrCreateConversation(userId1, userId2) {
     const [user1, user2] = userId1 < userId2 ? [userId1, userId2] : [userId2, userId1];
 
@@ -56,7 +54,6 @@ export async function getOrCreateConversation(userId1, userId2) {
     return found[0];
 }
 
-// Guardar un nuevo mensaje en una conversación
 export async function sendMessage(conversationId, senderId, content) {
     const result = await sql`
         INSERT INTO messages (conversation_id, sender_id, content)
@@ -65,7 +62,6 @@ export async function sendMessage(conversationId, senderId, content) {
     return result[0];
 }
 
-// Obtener historial de mensajes de una conversación
 export async function getMessages(conversationId, offset = 0) {
     const result = await sql`
         SELECT m.id, m.sender_id, u.name AS sender_name, m.content, m.created_at
@@ -84,7 +80,7 @@ export async function getOfflineMessages(conversationId, offset = 0) {
         WHERE conversation_id = ${conversationId} AND id > ${offset};`;
     return result;
 }
-// Obtener todas las conversaciones de un usuario
+
 export async function getUserConversations(userId) {
     const result = await sql`
         SELECT c.id AS conversation_id,
